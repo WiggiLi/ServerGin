@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Hello React</title>
+	<!--<link rel="shortcut icon" href="icon.png" type="image/png">-->
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div id="input_form"></div>
+	<div id="wrap">
+		<div id="data"></div>
+	</div>
+	<fieldset>
+		<legend><b>Файл:</b></legend>
+		<a  href="http://localhost:8081/get-csv"><button>Скачать csv</button></a>
+	</fieldset>			
+		
+	<script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+	<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.25.0/babel.min.js"></script>
+		  
+	
+
+	<script type="text/babel">
+
+		class TableComponent extends React.Component {
+			
+			render() {
+				return (
+				<table>
+				<tr><th>    Name    </th> <th>    Post    </th> <th>    DateStart    </th> <th>    DateEnd    </th></tr>
+					{this.props.array.map(item => (
+					<tr>
+						<td>{item.Name}</td> <td>{item.Post}</td>  <td>{item.DateStart.split('T')[0]}</td> <td>{item.DateEnd.split('T')[0]}</td>
+					</tr>
+					))}
+				</table>
+				);			
+			}
+		}
+
+	/////////////////////////////////////////////////////////////////////////
+	//PAGES
+	/////////////////////////////////////////////////////////////////////////
+		class PagesComponent extends React.Component {
+			constructor(props) {
+			super(props);
+			this.state = {
+				error: null,
+				isLoaded: false,
+				items: [],
+				pages_count: 1, // total number
+				currentPage: 1,
+				rowsOnPage:3 			//pages on 1 page
+			};			
+			this.getdata = this.getdata.bind(this);
+			this.round_pages = this.round_pages.bind(this);
+			this.get_count_pages = this.get_count_pages.bind(this);
+			this.sleep = this.sleep.bind(this);
+			this.formData = this.formData.bind(this);
+			}
+	
+			//call for second time
+			componentDidUpdate(prevProps) {	
+				//(don't forget to compare props to prevent circularity):
+				if (this.props.name !== prevProps.name || this.props.post !== prevProps.post || this.props.dateStart !== prevProps.dateStart || this.props.dateEnd !== prevProps.dateEnd ) {
+					this.get_count_pages();
+					this.sleep(1000).then(() => {this.getdata(1);});
+				} 
+			}
+
+			//call for first time
+			componentDidMount() {
+				this.get_count_pages();
+				this.sleep(1000).then(() => {this.getdata(1);});
+			}
+			
+			sleep(time) {
+				return new Promise((resolve) => setTimeout(resolve, time));
+			}
+
+			formData(obj){
+				if (this.props.name != ""){
+					console.log("not null4");
+					obj.Name = this.props.name;
+				}
+				if (this.props.post != ""){
+					obj.Post = this.props.post;
+				}
+				if (this.props.dateStart != ""){
+					obj.DateStart = this.props.dateStart;
+				}
+				if (this.props.dateEnd != ""){
+					obj.DateEnd = this.props.dateEnd;
+				}
+				return obj
+			}
+			
+			get_count_pages(){
+				var obj = {};
+				obj = this.formData(obj)
+				console.log('obj: ',obj);	//
+
+				fetch("http://localhost:8081/count",{
+					method: 'POST',
+					body: JSON.stringify(obj),
+				})
+				.then( (res) => {
+					console.log('response: ',res.status); return res.text()
+				})				  
+				.then(					
+					(result) => {					
+						console.log('data in fetch ', result);
+						this.setState({
+							pages_count: result,
+						});
+					}
+				)
+			}
+			
+			getdata(page) {	
+				this.setState({currentPage: page});
+				
+				var obj = {};
+				obj.Page = String(page); // currentPage
+				obj.Count = String(this.state.rowsOnPage); //how many rowsOnPage need to be returned   TODO: not consider last page and get less rowsOnPage
+				obj = this.formData(obj)
+
+				fetch("http://localhost:8081/comms",{
+					method: 'POST',
+					body: JSON.stringify(obj),
+				})
+				.then( (res) => {
+					console.log('response: ',res.status); return res.json() 
+				})				  
+				.then(					
+					(result) => {					
+						this.setState({
+							isLoaded: true,
+							items: (Array.isArray(result)) ? result : Array.from([result])
+						});
+					},
+					// Примечание: важно обрабатывать ошибки именно здесь, а не в блоке catch(), чтобы не перехватывать исключения из ошибок в самих компонентах.
+					(error) => {
+						this.setState({
+							isLoaded: true,
+							error
+						});
+					}
+				)
+				//event.preventDefault();
+			}
+			
+			round_pages(x){
+				return Math.ceil(x/this.state.rowsOnPage)*this.state.rowsOnPage;
+			}
+		  
+			render() {
+				const { error, isLoaded, items } = this.state;
+				if (error) {
+					return <div id="data">Ошибка: {error.message}</div>;
+				} else if (!isLoaded) {
+					return <div id="data">Загрузка...</div>; 
+				} else {
+					var rows_a = [];
+					var sum_page = this.round_pages(this.state.pages_count)/ this.state.rowsOnPage;
+					//console.log("sum_page "+ sum_page);
+					if (sum_page == 0 || sum_page ==1){
+						return (
+							<div>				
+								<TableComponent  array = {this.state.items} />
+							</div>
+						);
+					}
+					var left, right; 
+					var capacity = 3; //3*2=6 +1 =7
+
+					if (sum_page < 11){
+						left = 1;
+						right = sum_page;						
+					}
+					else if (this.state.currentPage <= 6){
+						left = 1;
+						right = 9;
+					}
+					else if (sum_page - this.state.currentPage < 6){
+						left = sum_page - 8;
+						right = sum_page;
+					}
+					else {
+						left = this.state.currentPage-3; 
+						right = this.state.currentPage+3;
+					}
+					console.log("right "+ right);
+					rows_a.push(<a href="#" onClick={this.getdata.bind(this, this.state.currentPage > 2 ? this.state.currentPage-1 : 1) }>&laquo;</a>); // <
+					
+
+					if (left  > 2) {
+						rows_a.push(<a href="#" style={{ backgroundColor:this.state.currentPage == 1 ? '#79bd8f' : ''}} onClick={this.getdata.bind(this, 1)} > {1}</a>);						
+						rows_a.push(<a href="#" style={{border:'0px', pointerEvents:'none'}} >...</a>); 
+					}
+			
+					for (var i = left;    i <=  right;	 i++) {
+						rows_a.push(<a href="#" style={{ backgroundColor:this.state.currentPage == i ? '#79bd8f' : ''}} onClick={this.getdata.bind(this, i) }>{i}</a>);
+					}
+		
+					if (right  < sum_page-1) {				
+						rows_a.push(<a href="#" style={{border:'0px', pointerEvents:'none'}} >...</a>);
+						rows_a.push(<a href="#" style={{ backgroundColor:this.state.currentPage == sum_page ? '#79bd8f' : ''}} onClick={this.getdata.bind(this, sum_page)} > {sum_page}</a>);						
+					}
+					
+					rows_a.push(<a href="#" onClick={this.getdata.bind(this, (parseInt(this.state.currentPage+1) < sum_page) ? parseInt(this.state.currentPage+1) : sum_page) }>&raquo;</a>); // >
+			
+					return (
+						<div>				
+							<TableComponent  array = {this.state.items} />,     
+							<div class="center">
+								<div class="pagination">
+									{rows_a}				  
+								</div>
+							</div>
+						</div>
+					);
+				}
+			}
+		}
+
+
+	
+	/////////////////////////////////////////////////////////////////////////
+	//input form
+	/////////////////////////////////////////////////////////////////////////
+	class NameForm extends React.Component {
+		constructor(props) {
+			super(props);
+			var name = ""; 
+			var nameIsValid = true;
+			var post = ""; 
+			var postIsValid = true;
+			var dateStart = ""; 
+			var dateIsValid = true;
+			var dateEnd = ""; 
+			var dateEndIsValid = true;
+			this.state = {name: name, post: post, nameValid: nameIsValid, portValid: postIsValid, dateStart: dateStart, dateEnd: dateEnd, dateValid: dateIsValid, dateEndValid: dateEndIsValid};
+
+			this.handleChangeName = this.handleChangeName.bind(this);
+			this.handleChangePort = this.handleChangePort.bind(this);
+			this.handleChangeDate = this.handleChangeDate.bind(this);
+			this.handleSubmit = this.handleSubmit.bind(this);
+		}	
+	  
+		validateDate(date){
+			return date==null || date=="";
+		}
+   
+		handleChangeName(event) {
+		    var val = event.target.value;
+			var valid = true;
+		    this.setState({name: val, nameValid: valid});
+		}
+		handleChangePort(event) { 
+		    var val = event.target.value;
+			var valid = (val=="" || (val>=1 && val<=12));
+		    this.setState({post: val, portValid: valid});
+		}
+
+   		handleChangeDate(id) {
+			var val = event.target.value; 
+			console.log("date "+ val);
+			if (id=="id1") {
+				var valid = this.validateDate(val);
+				if (valid){
+					if (this.state.dateEnd ==null || this.state.dateEnd ==""){
+						this.setState({dateStart: val, dateValid:true, dateEndValid: true}); 
+					} else{
+						this.setState({dateStart: val, dateValid:false, dateEndValid: true}); 
+					}
+				}else if (this.state.dateEnd ==null || this.state.dateEnd ==""){                  
+					this.setState({dateStart: val, dateEndValid: false});
+				}
+				else if(new Date(val).getTime()> new Date(this.state.dateEnd).getTime()){
+					this.setState({dateStart: val, dateValid:false});
+				}
+				else { 
+					this.setState({dateStart: val, dateValid:true, dateEndValid: true});
+				}				
+		    }
+			if (id=="id2") {
+				var valid = this.validateDate(val);
+				if (valid){ //empty
+					if (this.state.dateStart ==null || this.state.dateStart ==""){
+						this.setState({dateEnd: val, dateValid:true, dateEndValid: true}); 
+					} else{
+						this.setState({dateEnd: val, dateValid:true, dateEndValid: false}); 
+					}
+					//this.setState({dateEnd: val, dateEndValid:true}); alert("2 empty");
+				}
+				else if (this.state.dateStart ==null || this.state.dateStart ==""){ //first field empty
+					this.setState({dateEnd: val, dateValid:false}); 
+				}
+				else if (new Date(this.state.dateStart).getTime()>new Date(val).getTime()){
+					 this.setState({dateEnd: val, dateEndValid:false}); 
+				}
+				else {
+					this.setState({dateEnd: val, dateEndValid: true, dateValid:true}); 
+				}
+			}  
+		}
+	  
+		handleKey = e => {
+			if ([69, 187, 188, 189, 190].includes(e.keyCode)) {
+				e.preventDefault();
+			}
+		} 
+    
+		handleSubmit(event) {
+			if (this.state.nameValid ===true && this.state.portValid===true && this.state.dateValid===true && this.state.dateEndValid===true)  {
+				ReactDOM.render(
+					<PagesComponent name={this.state.name} post={this.state.post} dateStart={this.state.dateStart} dateEnd={this.state.dateEnd}/>,
+					document.getElementById("wrap")    
+				);
+			} else {
+				alert("invalid parameters");
+			}
+			event.preventDefault();
+		}
+
+
+		render() {
+			var maxVar=new Date().toISOString().split("T")[0];
+            var nameColor = this.state.nameValid===true?"grey":"red";
+            var portColor = this.state.portValid===true?"grey":"red";
+            var dateColor = this.state.dateValid===true?"grey":"red";
+            var dateEndColor = this.state.dateEndValid===true?"grey":"red";
+		
+			return (
+		
+			<form onSubmit={this.handleSubmit}>
+				<fieldset>
+				<legend><b>Параметры поиска:</b></legend>
+				<label> ID: </label> 
+					<input type="text"  value={this.state.name} onChange={this.handleChangeName} style={{borderColor:nameColor}} />
+				 <label> Post: </label> 
+				   <input type="number"  value={this.state.post} placeholder="число от 1 до 12" min="1" max="12" onChange={this.handleChangePort} onKeyDown={this.handleKey}  style={{borderColor:portColor}}/>
+		
+				<label> DateStart: </label>
+					<input type="date"  value={this.state.dateStart} onChange={this.handleChangeDate.bind(this, "id1")} max = {maxVar} style={{borderColor:dateColor}}/>
+				
+				<label> DateEnd: </label>
+					<input type="date"  value={this.state.dateEnd}   onChange={this.handleChangeDate.bind(this, "id2")} max = {maxVar} style={{borderColor:dateEndColor}}/>
+		
+				</fieldset>
+				<div id="centerbut"><input type="submit" id="sub" value="Submit" /><br/><br/></div>
+				
+			</form>	  
+		);
+	  }
+	}
+
+	ReactDOM.render(
+		<NameForm />,
+		document.getElementById('input_form')
+	);
+
+	</script>
+</body>
+
