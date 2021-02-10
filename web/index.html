@@ -3,8 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <title>Hello React</title>
-	<!--<link rel="shortcut icon" href="icon.png" type="image/png">-->
-	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
 	<div id="input_form"></div>
@@ -20,12 +19,10 @@
 	<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.25.0/babel.min.js"></script>
 		  
-	
 
 	<script type="text/babel">
 
 		class TableComponent extends React.Component {
-			
 			render() {
 				return (
 				<table>
@@ -40,9 +37,6 @@
 			}
 		}
 
-	/////////////////////////////////////////////////////////////////////////
-	//PAGES
-	/////////////////////////////////////////////////////////////////////////
 		class PagesComponent extends React.Component {
 			constructor(props) {
 			super(props);
@@ -52,7 +46,7 @@
 				items: [],
 				pages_count: 1, // total number
 				currentPage: 1,
-				rowsOnPage:3 			//pages on 1 page
+				rowsOnPage:3 	//pages on 1 page
 			};			
 			this.getdata = this.getdata.bind(this);
 			this.round_pages = this.round_pages.bind(this);
@@ -141,7 +135,6 @@
 							items: (Array.isArray(result)) ? result : Array.from([result])
 						});
 					},
-					// Примечание: важно обрабатывать ошибки именно здесь, а не в блоке catch(), чтобы не перехватывать исключения из ошибок в самих компонентах.
 					(error) => {
 						this.setState({
 							isLoaded: true,
@@ -149,7 +142,6 @@
 						});
 					}
 				)
-				//event.preventDefault();
 			}
 			
 			round_pages(x){
@@ -165,7 +157,6 @@
 				} else {
 					var rows_a = [];
 					var sum_page = this.round_pages(this.state.pages_count)/ this.state.rowsOnPage;
-					//console.log("sum_page "+ sum_page);
 					if (sum_page == 0 || sum_page ==1){
 						return (
 							<div>				
@@ -174,7 +165,7 @@
 						);
 					}
 					var left, right; 
-					var capacity = 3; //3*2=6 +1 =7
+					var capacity = 3; 
 
 					if (sum_page < 11){
 						left = 1;
@@ -192,7 +183,6 @@
 						left = this.state.currentPage-3; 
 						right = this.state.currentPage+3;
 					}
-					console.log("right "+ right);
 					rows_a.push(<a href="#" onClick={this.getdata.bind(this, this.state.currentPage > 2 ? this.state.currentPage-1 : 1) }>&laquo;</a>); // <
 					
 
@@ -227,10 +217,6 @@
 		}
 
 
-	
-	/////////////////////////////////////////////////////////////////////////
-	//input form
-	/////////////////////////////////////////////////////////////////////////
 	class NameForm extends React.Component {
 		constructor(props) {
 			super(props);

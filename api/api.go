@@ -20,19 +20,6 @@ func (server *WebServer) getAllEvents(c *gin.Context) {
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Access-Control-Allow-Methods", "POST")
 
-	/*var (
-		corsAllowHeaders     = "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization, X-CSRF-Token"
-		corsAllowMethods     = "HEAD,GET,POST,PUT,DELETE,OPTIONS"
-		corsAllowOrigin      = "*"
-		corsAllowCredentials = "true"
-	)
-
-	ctx.Response.Header.Set("Access-Control-Allow-Credentials", corsAllowCredentials)
-	ctx.Response.Header.Set("Access-Control-Allow-Headers", corsAllowHeaders)
-	ctx.Response.Header.Set("Access-Control-Allow-Methods", corsAllowMethods)
-	ctx.Response.Header.Set("Access-Control-Allow-Origin", corsAllowOrigin)
-	*/
-
 	newEvent := app.NewEvent()
 
 	if err := c.ShouldBindJSON(&newEvent); err != nil {
@@ -50,18 +37,7 @@ func (server *WebServer) getAllEvents(c *gin.Context) {
 func (server *WebServer) getCount(c *gin.Context) {
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Access-Control-Allow-Methods", "POST")
-	/*var (
-		corsAllowHeaders     = "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization, X-CSRF-Token"
-		corsAllowMethods     = "HEAD,GET,POST,PUT,DELETE,OPTIONS"
-		corsAllowOrigin      = "*"
-		corsAllowCredentials = "true"
-	)
 
-	ctx.Response.Header.Set("Access-Control-Allow-Credentials", corsAllowCredentials)
-	ctx.Response.Header.Set("Access-Control-Allow-Headers", corsAllowHeaders)
-	ctx.Response.Header.Set("Access-Control-Allow-Methods", corsAllowMethods)
-	ctx.Response.Header.Set("Access-Control-Allow-Origin", corsAllowOrigin)
-	*/
 	newEvent := app.NewEvent()
 
 	if err := c.ShouldBindJSON(&newEvent); err != nil {
@@ -69,25 +45,12 @@ func (server *WebServer) getCount(c *gin.Context) {
 		return
 	}
 
-	//json.Unmarshal(ctx.PostBody(), &newEvent)
 	count := server.application.GiveCount(newEvent)
-	//fmt.Fprint(c, count)
-	c.JSON(http.StatusOK, count)
 
+	c.JSON(http.StatusOK, count)
 }
 
 func (server *WebServer) csv_get(c *gin.Context) {
-	//ctx.Response.Header.Set("Access-Control-Allow-Origin", "*")
-	//ctx.Response.Header.Set("Access-Control-Allow-Methods", "POST")
-
-	/*payLoad := string(ctx.PostBody())
-	log.Print(payLoad)
-	newEvent := app.NewEvent()
-	json.Unmarshal(ctx.PostBody(), &newEvent)
-	count := server.application.GiveCount(newEvent)
-	fmt.Fprint(ctx, count)
-	*/
-
 	server.application.GiveCsv()
 
 	Openfile, err := os.Open("/tmp/products.csv")
@@ -95,22 +58,14 @@ func (server *WebServer) csv_get(c *gin.Context) {
 		log.Fatal(err)
 	}
 	defer Openfile.Close()
-	//_ = Openfile
+
 	//Send the headers before sending the file
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Access-Control-Allow-Methods", "GET")
 	c.Header("Content-Disposition", "attachment; filename="+"result.csv")
 	c.Header("Content-Type", "text/comma-separated-values")
 
-	//Send the file
-	//io.Copy(ctx, Openfile)
-	//buf := new(strings.Builder)
 	io.Copy(c.Writer, Openfile)
-	//b, _ := ioutil.ReadAll(Openfile)
-	//s = string(b)
-	//s := strings.Replace(string(b), "\r", "\n", -1)
-
-	//c.JSON(http.StatusOK, Openfile)
 }
 
 // Start initializes Web Server, starts application and begins serving
@@ -122,6 +77,10 @@ func (server *WebServer) Start(errc chan<- error) {
 	router.POST("/comms", server.getAllEvents)
 	router.POST("/count", server.getCount)
 	router.GET("/get-csv", server.csv_get)
+
+	//router.Static("style.css", "web/style.css")
+	router.StaticFile("/style.css", "web/style.css")
+	router.StaticFile("/", "web/index.html")
 
 	log.Print("Server is starting on port ", port)
 	errc <- router.Run(":8081")

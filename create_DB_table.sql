@@ -1,9 +1,9 @@
-
-CREATE TABLE Comments (
-  ID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-  Page INT,
-  Title NVARCHAR(255),
-  Description NVARCHAR(255)
+CREATE TABLE info (
+    name integer,
+    post integer,
+    DateStart date,
+    DateEnd date
 );
-GO
+
+
 

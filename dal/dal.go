@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -20,17 +22,21 @@ type PSQL struct {
 
 // NewPSQL constructs object of PSQL
 func NewPSQL(host string, port int) (*PSQL, error) {
-	//connString := fmt.Sprintf("server=%s;port=%d;trusted_connection=yes;", host, port)
-
 	var err error
 	var db *sql.DB
 
-	username := "postgres"
-	password := "mypass"
-	dbName := "web_pages"
+	e := godotenv.Load() //Загрузить файл .env
+	if e != nil {
+		log.Print(e)
+	}
 
-	connString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", host, username, password, dbName)
+	username := os.Getenv("db_user")
+	password := os.Getenv("db_pass")
+	dbName := os.Getenv("db_name")
+	dbHost := os.Getenv("db_host")
 
+	connString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, username, password, dbName)
+	_ = connString
 	db, err = sql.Open("postgres", connString)
 	if err != nil {
 		log.Fatal("Error creating connection pool: ", err.Error())
@@ -67,26 +73,19 @@ func (t *PSQL) Read(current *app.Event) (*app.AllEvents, error) {
 		log.Fatal("Error pinging database: " + err.Error())
 	}
 
-	///////
 	i1, err := strconv.Atoi(current.Page)
 	if err != nil {
-		log.Fatal("page type ERROR. ", err.Error())
+		log.Fatal("page type error. ", err.Error())
 	}
 	i2, err := strconv.Atoi(current.Count)
 	if err != nil {
-		log.Fatal("count type ERROR. ", err.Error())
+		log.Fatal("count type error. ", err.Error())
 	}
 
-	//////
 	conditions := getStrings(current)
-	/////
 
-	log.Print("inteval: ", i2, " ", (i1-1)*i2)
-	log.Printf("USE react_db SELECT name, post, datestart, dateend FROM info %s ORDER BY (SELECT NULL) offset %d rows fetch next %d rows only;",
-		conditions, i2, (i1-1)*i2)
 	tsql := fmt.Sprintf("SELECT name, post, datestart, dateend FROM info %s limit %d offset %d;",
 		conditions, i2, (i1-1)*i2)
-	//tsql := fmt.Sprintf("SELECT name, post, datestart, dateend FROM info;")
 
 	stmt, err := t.DataBase.Prepare(tsql)
 	if err != nil {
@@ -119,12 +118,8 @@ func (t *PSQL) Read(current *app.Event) (*app.AllEvents, error) {
 		ev.DateStart = dateStart
 		ev.DateEnd = dateEnd
 		*events = append(*events, ev)
-
-		fmt.Printf("ID: %d, Name: %s, Description: %s\n", name, post, dateStart)
 	}
-
 	return events, nil
-
 }
 
 func (t *PSQL) Read2(current *app.Event) (int, error) {
