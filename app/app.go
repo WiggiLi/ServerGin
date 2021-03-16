@@ -13,8 +13,8 @@ type IncomeRegistration interface {
 
 // DataAccessLayer is an interface for DAL usage from Application
 type DataAccessLayer interface {
-	Read(*Event) (*AllEvents, error)
-	Read2(*Event) (int, error)
+	ReadEvent(*Event) (*AllEvents, error)
+	ReadCountRows(*Event) (int, error)
 	GetCsv() error
 }
 
@@ -27,26 +27,23 @@ type Application struct {
 // RegisterEvent sends Event to DAL for saving/registration
 func (app *Application) GiveEvents(currentData *Event) *AllEvents {
 	allEv := GetEvents()
-	allEv, err := app.DB.Read(currentData)
+	allEv, err := app.DB.ReadEvent(currentData)
 
 	if err != nil {
 		app.errc <- err
 		return nil
 	}
-
-	log.Print("Events readed from MS SQL server...")
+	log.Print("Events readed from DB...")
 	return allEv
 }
 
 func (app *Application) GiveCount(currentData *Event) int {
-	count, err := app.DB.Read2(currentData)
+	count, err := app.DB.ReadCountRows(currentData)
 
 	if err != nil {
 		app.errc <- err
 		return 0
 	}
-
-	log.Print("Events readed from MS SQL server...")
 
 	return count
 }

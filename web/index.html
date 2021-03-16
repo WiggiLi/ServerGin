@@ -11,7 +11,7 @@
 		<div id="data"></div>
 	</div>
 	<fieldset>
-		<legend><b>Файл:</b></legend>
+		<legend><b>File:</b></legend>
 		<a  href="http://localhost:8081/get-csv"><button>Скачать csv</button></a>
 	</fieldset>			
 		
@@ -21,7 +21,7 @@
 		  
 
 	<script type="text/babel">
-
+		//fill table with getting data
 		class TableComponent extends React.Component {
 			render() {
 				return (
@@ -37,6 +37,7 @@
 			}
 		}
 
+		//display table with page nambers
 		class PagesComponent extends React.Component {
 			constructor(props) {
 			super(props);
@@ -76,7 +77,6 @@
 
 			formData(obj){
 				if (this.props.name != ""){
-					console.log("not null4");
 					obj.Name = this.props.name;
 				}
 				if (this.props.post != ""){
@@ -94,7 +94,6 @@
 			get_count_pages(){
 				var obj = {};
 				obj = this.formData(obj)
-				console.log('obj: ',obj);	//
 
 				fetch("http://localhost:8081/count",{
 					method: 'POST',
@@ -105,7 +104,7 @@
 				})				  
 				.then(					
 					(result) => {					
-						console.log('data in fetch ', result);
+						//console.log('data in fetch ', result);
 						this.setState({
 							pages_count: result,
 						});
@@ -216,7 +215,7 @@
 			}
 		}
 
-
+	//add input forms
 	class NameForm extends React.Component {
 		constructor(props) {
 			super(props);
@@ -250,10 +249,10 @@
 			var valid = (val=="" || (val>=1 && val<=12));
 		    this.setState({post: val, portValid: valid});
 		}
-
+		
+		//check dates
    		handleChangeDate(id) {
 			var val = event.target.value; 
-			console.log("date "+ val);
 			if (id=="id1") {
 				var valid = this.validateDate(val);
 				if (valid){
@@ -293,13 +292,14 @@
 				}
 			}  
 		}
-	  
+		// ignore keys other than numbers
 		handleKey = e => {
 			if ([69, 187, 188, 189, 190].includes(e.keyCode)) {
 				e.preventDefault();
 			}
 		} 
-    
+		
+		// handle button click
 		handleSubmit(event) {
 			if (this.state.nameValid ===true && this.state.portValid===true && this.state.dateValid===true && this.state.dateEndValid===true)  {
 				ReactDOM.render(
@@ -312,7 +312,6 @@
 			event.preventDefault();
 		}
 
-
 		render() {
 			var maxVar=new Date().toISOString().split("T")[0];
             var nameColor = this.state.nameValid===true?"grey":"red";
@@ -321,27 +320,26 @@
             var dateEndColor = this.state.dateEndValid===true?"grey":"red";
 		
 			return (
-		
-			<form onSubmit={this.handleSubmit}>
-				<fieldset>
-				<legend><b>Параметры поиска:</b></legend>
-				<label> ID: </label> 
-					<input type="text"  value={this.state.name} onChange={this.handleChangeName} style={{borderColor:nameColor}} />
-				 <label> Post: </label> 
-				   <input type="number"  value={this.state.post} placeholder="число от 1 до 12" min="1" max="12" onChange={this.handleChangePort} onKeyDown={this.handleKey}  style={{borderColor:portColor}}/>
-		
-				<label> DateStart: </label>
-					<input type="date"  value={this.state.dateStart} onChange={this.handleChangeDate.bind(this, "id1")} max = {maxVar} style={{borderColor:dateColor}}/>
-				
-				<label> DateEnd: </label>
-					<input type="date"  value={this.state.dateEnd}   onChange={this.handleChangeDate.bind(this, "id2")} max = {maxVar} style={{borderColor:dateEndColor}}/>
-		
-				</fieldset>
-				<div id="centerbut"><input type="submit" id="sub" value="Submit" /><br/><br/></div>
-				
-			</form>	  
-		);
-	  }
+				<form onSubmit={this.handleSubmit}>
+					<fieldset>
+					<legend><b>Параметры поиска:</b></legend>
+					<label> ID: </label> 
+						<input type="text"  value={this.state.name} onChange={this.handleChangeName} style={{borderColor:nameColor}} />
+					<label> Post: </label> 
+					<input type="number"  value={this.state.post} placeholder="number from 1 to 12" min="1" max="12" onChange={this.handleChangePort} onKeyDown={this.handleKey}  style={{borderColor:portColor}}/>
+			
+					<label> DateStart: </label>
+						<input type="date"  value={this.state.dateStart} onChange={this.handleChangeDate.bind(this, "id1")} max = {maxVar} style={{borderColor:dateColor}}/>
+					
+					<label> DateEnd: </label>
+						<input type="date"  value={this.state.dateEnd}   onChange={this.handleChangeDate.bind(this, "id2")} max = {maxVar} style={{borderColor:dateEndColor}}/>
+			
+					</fieldset>
+					<div id="centerbut"><input type="submit" id="sub" value="Submit" /><br/><br/></div>
+					
+				</form>	  
+			);
+	    }
 	}
 
 	ReactDOM.render(

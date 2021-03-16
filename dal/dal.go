@@ -25,7 +25,7 @@ func NewPSQL(host string, port int) (*PSQL, error) {
 	var err error
 	var db *sql.DB
 
-	e := godotenv.Load() //Загрузить файл .env
+	e := godotenv.Load()
 	if e != nil {
 		log.Print(e)
 	}
@@ -55,7 +55,7 @@ func NewPSQL(host string, port int) (*PSQL, error) {
 	return res, nil
 }
 
-func (t *PSQL) Read(current *app.Event) (*app.AllEvents, error) {
+func (t *PSQL) ReadEvent(current *app.Event) (*app.AllEvents, error) {
 	events := app.GetEvents()
 
 	ctx := context.Background()
@@ -83,7 +83,6 @@ func (t *PSQL) Read(current *app.Event) (*app.AllEvents, error) {
 	}
 
 	conditions := getStrings(current)
-
 	tsql := fmt.Sprintf("SELECT name, post, datestart, dateend FROM info %s limit %d offset %d;",
 		conditions, i2, (i1-1)*i2)
 
@@ -122,7 +121,7 @@ func (t *PSQL) Read(current *app.Event) (*app.AllEvents, error) {
 	return events, nil
 }
 
-func (t *PSQL) Read2(current *app.Event) (int, error) {
+func (t *PSQL) ReadCountRows(current *app.Event) (int, error) {
 
 	ctx := context.Background()
 	var err error
@@ -140,10 +139,7 @@ func (t *PSQL) Read2(current *app.Event) (int, error) {
 	}
 
 	conditions := getStrings(current)
-
 	tsql1 := fmt.Sprintf("SELECT count(*) FROM info %s;", conditions)
-
-	log.Print("Ok1 in Reda2")
 
 	stmt1, err := t.DataBase.Prepare(tsql1)
 	if err != nil {
@@ -152,11 +148,9 @@ func (t *PSQL) Read2(current *app.Event) (int, error) {
 	}
 	defer stmt1.Close()
 
-	log.Print("Ok2 in Reda2")
-
 	rows1, err := t.DataBase.QueryContext(ctx, tsql1)
 	if err != nil {
-		log.Fatal("Error reading rows: " + err.Error())
+		log.Println("Error reading rows: " + err.Error())
 		return 0, err
 	}
 
@@ -167,10 +161,8 @@ func (t *PSQL) Read2(current *app.Event) (int, error) {
 		err = rows1.Scan(&count)
 	}
 
-	log.Print("Count: ", count)
-
 	if err != nil {
-		log.Fatal("Error reading rows: " + err.Error())
+		log.Println("Error reading rows: " + err.Error())
 		return 0, err
 	}
 
@@ -178,6 +170,7 @@ func (t *PSQL) Read2(current *app.Event) (int, error) {
 
 }
 
+//construct condition for request
 func getStrings(current *app.Event) string {
 	conditions := ""
 	check_condition := false
@@ -215,8 +208,6 @@ func getStrings(current *app.Event) string {
 }
 
 func (t *PSQL) GetCsv() error {
-	//var err error
-	//file, err := ioutil.ReadFile("get_csv.sql") //file
 	var err error
 	ctx := context.Background()
 
@@ -231,9 +222,6 @@ func (t *PSQL) GetCsv() error {
 	if err != nil {
 		log.Fatal("Error pinging database: " + err.Error())
 	}
-
-	//conditions := "where name = 9" //getStrings(current)
-	//tsql := fmt.Sprintf("COPY info TO '/tmp/products.csv' WITH (FORMAT CSV, HEADER);", conditions) //(select * from info %s)
 
 	_, err = t.DataBase.Exec("COPY info TO '/tmp/products.csv' WITH (FORMAT CSV, HEADER);") //Exec(string(file))
 	if err != nil {

@@ -10,8 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// WebServer accepts POST requests with payload of XML docs of Receipts
-// Then it parses them with XPath and pushes data to Application
 type WebServer struct {
 	application app.IncomeRegistration
 }
@@ -78,12 +76,11 @@ func (server *WebServer) Start(errc chan<- error) {
 	router.POST("/count", server.getCount)
 	router.GET("/get-csv", server.csv_get)
 
-	//router.Static("style.css", "web/style.css")
 	router.StaticFile("/style.css", "web/style.css")
 	router.StaticFile("/", "web/index.html")
 
 	log.Print("Server is starting on port ", port)
-	errc <- router.Run(":8081")
+	errc <- router.Run(port)
 }
 
 // NewWebServer constructs Web Server
